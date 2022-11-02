@@ -6,7 +6,9 @@ The Adventures of OS
 - risc_v/src/asm - contains assembly portions
 - risc_v/src/userspace - contains C++ userspace programs
 
-# This version was updated to compile with current Rust versions
-# and to run with a recent qemu, which requires PMP to be setup
-# before switching to S/U mode
+# Updates
+
+This version was updated to compile with current Rust versions
+and to run with a recent qemu, which requires PMP to be setup
+before switching to S/U mode.
 

@@ -3,6 +3,7 @@
 // Stephen Marz
 // 27 Nov 2019
 
+use core::arch::asm;
 use crate::{cpu::{build_satp,
                   get_mtime,
                   satp_fence_asid,
@@ -188,7 +189,7 @@ fn init_process() {
 			// being ran as a kernel process. If we ran this as a
 			// user process, it'd need a system call to execute a
 			// privileged instruction.
-			unsafe { llvm_asm!("wfi") };
+			unsafe { asm!("wfi") };
 		}
 	}
 }

@@ -4,6 +4,8 @@
 // Stephen Marz
 // 14 October 2019
 
+use core::arch::asm;
+
 // The frequency of QEMU is 10 MHz
 pub const FREQ: u64 = 10_000_000;
 // Let's do this 250 times per second for switching
@@ -61,6 +63,10 @@ pub enum Registers {
 	T4,
 	T5, /* 30 */
 	T6
+}
+
+pub const fn gp(r: Registers) -> usize {
+	r as usize
 }
 
 // Floating point registers
@@ -149,65 +155,86 @@ pub const fn build_satp(mode: SatpMode, asid: usize, addr: usize) -> usize {
 	| (addr >> 12) & 0xff_ffff_ffff
 }
 
-pub fn mhartid_read() -> usize {
+pub fn pmpaddr0_write(val: usize) {
+	unsafe {
+		asm!("csrw pmpaddr0, {0}", in(reg) val);
+	}
+}
+
+pub fn pmpcfg0_write(val: usize) {
+	unsafe {
+		asm!("csrw pmpcfg0, {0}", in(reg) val);
+	}
+}
+
+pub fn getsp() -> usize {
 	unsafe {
 		let rval;
-		llvm_asm!("csrr $0, mhartid" :"=r"(rval));
+		asm!("mv sp, {0}", out(reg) rval);
 		rval
 	}
 }
+
+pub fn mhartid_read() -> usize {
+	unsafe {
+		let rval;
+		asm!("csrr {0}, mhartid", out(reg) rval);
+		rval
+	}
+}
+
 pub fn mie_read() -> usize {
 	unsafe {
 		let rval;
-		llvm_asm!("csrr $0, mie" :"=r"(rval));
+		asm!("csrr {0}, mie", out(reg) rval);
 		rval
 	}
 }
 
 pub fn mie_write(val: usize) {
 	unsafe {
-		llvm_asm!("csrw mie, $0" :: "r"(val));
+		asm!("csrw mie, {0}", in(reg) val);
 	}
 }
 
 pub fn mstatus_write(val: usize) {
 	unsafe {
-		llvm_asm!("csrw	mstatus, $0" ::"r"(val));
+		asm!("csrw mstatus, {0}", in(reg) val);
 	}
 }
 
 pub fn mstatus_read() -> usize {
 	unsafe {
 		let rval;
-		llvm_asm!("csrr	$0, mstatus":"=r"(rval));
+		asm!("csrr {0}, mstatus", out(reg) rval);
 		rval
 	}
 }
 
 pub fn stvec_write(val: usize) {
 	unsafe {
-		llvm_asm!("csrw	stvec, $0" ::"r"(val));
+		asm!("csrw stvec, {0}", in(reg) val);
 	}
 }
 
 pub fn stvec_read() -> usize {
 	unsafe {
 		let rval;
-		llvm_asm!("csrr	$0, stvec" :"=r"(rval));
+		asm!("csrr {0}, stvec", out(reg) rval);
 		rval
 	}
 }
 
 pub fn mscratch_write(val: usize) {
 	unsafe {
-		llvm_asm!("csrw	mscratch, $0" ::"r"(val));
+		asm!("csrw mscratch, {0}", in(reg) val);
 	}
 }
 
 pub fn mscratch_read() -> usize {
 	unsafe {
 		let rval;
-		llvm_asm!("csrr	$0, mscratch" : "=r"(rval));
+		asm!("csrr {0}, mscratch", out(reg) rval);
 		rval
 	}
 }
@@ -215,21 +242,21 @@ pub fn mscratch_read() -> usize {
 pub fn mscratch_swap(to: usize) -> usize {
 	unsafe {
 		let from;
-		llvm_asm!("csrrw	$0, mscratch, $1" : "=r"(from) : "r"(to));
+		asm!("csrrw {0}, mscratch, {1}", in(reg) to, out(reg) from);
 		from
 	}
 }
 
 pub fn sscratch_write(val: usize) {
 	unsafe {
-		llvm_asm!("csrw	sscratch, $0" ::"r"(val));
+		asm!("csrw sscratch, {0}", in(reg) val);
 	}
 }
 
 pub fn sscratch_read() -> usize {
 	unsafe {
 		let rval;
-		llvm_asm!("csrr	$0, sscratch" : "=r"(rval));
+		asm!("csrr {0}, sscratch", out(reg) rval);
 		rval
 	}
 }
@@ -237,49 +264,49 @@ pub fn sscratch_read() -> usize {
 pub fn sscratch_swap(to: usize) -> usize {
 	unsafe {
 		let from;
-		llvm_asm!("csrrw	$0, sscratch, $1" : "=r"(from) : "r"(to));
+		asm!("csrrw {0}, sscratch, {1}", in(reg) to, out(reg) from);
 		from
 	}
 }
 
 pub fn mepc_write(val: usize) {
 	unsafe {
-		llvm_asm!("csrw mepc, $0" :: "r"(val));
+		asm!("csrw mepc, {0}", in(reg) val);
 	}
 }
 
 pub fn mepc_read() -> usize {
 	unsafe {
 		let rval;
-		llvm_asm!("csrr $0, mepc" :"=r"(rval));
+		asm!("csrr {0}, mepc", out(reg) rval);
 		rval
 	}
 }
 
 pub fn sepc_write(val: usize) {
 	unsafe {
-		llvm_asm!("csrw sepc, $0" :: "r"(val));
+		asm!("csrw sepc, {0}", in(reg) val);
 	}
 }
 
 pub fn sepc_read() -> usize {
 	unsafe {
 		let rval;
-		llvm_asm!("csrr $0, sepc" :"=r"(rval));
+		asm!("csrr {0}, sepc", out(reg) rval);
 		rval
 	}
 }
 
 pub fn satp_write(val: usize) {
 	unsafe {
-		llvm_asm!("csrw satp, $0" :: "r"(val));
+		asm!("csrw satp, {0}", in(reg) val);
 	}
 }
 
 pub fn satp_read() -> usize {
 	unsafe {
 		let rval;
-		llvm_asm!("csrr $0, satp" :"=r"(rval));
+		asm!("csrr {0}, satp", out(reg) rval);
 		rval
 	}
 }
@@ -289,7 +316,7 @@ pub fn satp_read() -> usize {
 /// TLB.
 pub fn satp_fence(vaddr: usize, asid: usize) {
 	unsafe {
-		llvm_asm!("sfence.vma $0, $1" :: "r"(vaddr), "r"(asid));
+		asm!("sfence.vma {0}, {1}", in(reg) vaddr, in(reg) asid);
 	}
 }
 
@@ -302,7 +329,7 @@ pub fn satp_fence(vaddr: usize, asid: usize) {
 /// Intel/AMD's invtlb [] instruction.
 pub fn satp_fence_asid(asid: usize) {
 	unsafe {
-		llvm_asm!("sfence.vma zero, $0" :: "r"(asid));
+		asm!("sfence.vma zero, {0}", in(reg)asid);
 	}
 }
 
@@ -314,8 +341,17 @@ pub fn get_mtime() -> usize {
 
 /// Copy one data from one memory location to another.
 pub unsafe fn memcpy(dest: *mut u8, src: *const u8, bytes: usize) {
-	for i in 0..bytes {
-		dest.add(i).write(src.add(i).read());
+	let bytes_as_8 = bytes / 8;
+	let dest_as_8 = dest as *mut u64;
+	let src_as_8 = src as *const u64;
+
+	for i in 0..bytes_as_8 {
+		*(dest_as_8.add(i)) = *(src_as_8.add(i));
+	}
+	let bytes_completed = bytes_as_8 * 8;
+	let bytes_remaining = bytes - bytes_completed;
+	for i in bytes_completed..bytes_remaining {
+		*(dest.add(i)) = *(src.add(i));
 	}
 }
 

@@ -4,14 +4,9 @@
 #![no_main]
 #![no_std]
 #![feature(panic_info_message,
-           asm,
-		   llvm_asm,
-		   global_asm,
            allocator_api,
            alloc_error_handler,
-           alloc_prelude,
-		   const_raw_ptr_to_usize_cast,
-		   lang_items)]
+	   lang_items)]
 
 #[lang = "eh_personality"] extern fn eh_personality() {}
 
@@ -19,6 +14,7 @@
 extern crate alloc;
 // This is experimental and requires alloc_prelude as a feature
 // use alloc::prelude::v1::*;
+use core::arch::asm;
 
 // ///////////////////////////////////
 // / RUST MACROS
@@ -69,7 +65,7 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
 extern "C" fn abort() -> ! {
 	loop {
 		unsafe {
-			llvm_asm!("wfi"::::"volatile");
+			asm!("wfi");
 		}
 	}
 }
@@ -93,6 +89,8 @@ fn rust_switch_to_user(frame: usize) -> ! {
 #[no_mangle]
 extern "C" fn kinit() {
 	uart::Uart::new(0x1000_0000).init();
+	cpu::pmpaddr0_write(0x3fffffff);
+	cpu::pmpcfg0_write(0xf);	
 	page::init();
 	kmem::init();
 	process::init();
@@ -109,7 +107,8 @@ extern "C" fn kinit() {
 	}
 	// Set up virtio. This requires a working heap and page-grained allocator.
 	virtio::probe();
-	// Test the block driver!
+
+	// console::init();
 	process::add_kernel_process(test::test);
 	// Get the GPU going
 	gpu::init(6);
@@ -132,6 +131,7 @@ extern "C" fn kinit_hart(_hartid: usize) {
 pub mod assembly;
 pub mod block;
 pub mod buffer;
+// pub mod console;
 pub mod cpu;
 pub mod elf;
 pub mod fs;
@@ -147,6 +147,7 @@ pub mod sched;
 pub mod syscall;
 pub mod trap;
 pub mod uart;
+// pub mod vfs;
 pub mod virtio;
 pub mod test;
 

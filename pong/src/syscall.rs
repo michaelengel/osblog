@@ -1,6 +1,8 @@
 use core::fmt::{Write, Error};
 use crate::event::Event;
 
+use core::arch::asm;
+
 pub struct Writer;
 
 impl Write for Writer {

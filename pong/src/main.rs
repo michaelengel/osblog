@@ -1,6 +1,9 @@
 #![no_std]
 #![feature(asm, panic_info_message, lang_items, start, global_asm)]
 
+use core::arch::asm;
+use core::arch::global_asm;
+
 #[lang = "eh_personality"]
 extern "C" fn eh_personality() {}
 
